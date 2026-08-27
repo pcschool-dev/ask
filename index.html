@@ -63,7 +63,7 @@
          ไม่มีไฟล์ก็ปล่อยไว้ได้ — โหลดพลาดแท็กจะถอดตัวเองทิ้ง เหลือ 🎓 -->
     <!-- referrerpolicy เผื่อกรณีแก้ src เป็นลิงก์ googleusercontent ซึ่งปฏิเสธ referrer ข้ามโดเมน -->
     <div class="mark">🎓<img class="logo" alt="" referrerpolicy="no-referrer" src="Logo.png"
-         onload="this.parentElement.classList.add('has-logo')"
+         onload="if(this.parentElement)this.parentElement.classList.add('has-logo')"
          onerror="this.remove()"></div>
     <div class="school">โรงเรียนปากช่อง</div>
     <div class="system">ระบบประเมินครูผู้สอนรายวิชา</div>
