@@ -28,7 +28,14 @@
   .box { text-align: center; max-width: 340px; padding: 0 24px; }
   .mark { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 18px;
           display: flex; align-items: center; justify-content: center; font-size: 30px;
-          background: var(--brand); box-shadow: 0 8px 24px rgba(16,24,40,.18); }
+          background: var(--brand); box-shadow: 0 8px 24px rgba(16,24,40,.18);
+          position: relative; overflow: hidden; }
+  /* โลโก้จริงเฟดทับ 🎓 เมื่อโหลดเสร็จ — โหลดพลาดจะถอดตัวเองทิ้ง เหลืออิโมจิ ไม่มีรูปแตก */
+  .mark .logo { position: absolute; inset: 0; width: 100%; height: 100%;
+                object-fit: contain; padding: 7px; box-sizing: border-box;
+                background: #fff; border-radius: inherit;
+                opacity: 0; transition: opacity .25s ease; }
+  .mark.has-logo .logo { opacity: 1; }
   .school { font-weight: 700; font-size: 1.05rem; color: #1f2937; }
   .system { font-size: .85rem; color: #6b7280; margin-bottom: 16px; }
   .bar { height: 4px; border-radius: 2px; background: #e9ecef; overflow: hidden;
@@ -47,7 +54,11 @@
 
 <div id="loader">
   <div class="box">
-    <div class="mark">🎓</div>
+    <!-- วางไฟล์ logo.png ไว้โฟลเดอร์เดียวกับหน้านี้ (หรือแก้ src เป็น URL เต็ม)
+         ไม่มีไฟล์ก็ปล่อยไว้ได้ — โหลดพลาดแท็กจะถอดตัวเองทิ้ง เหลือ 🎓 -->
+    <div class="mark">🎓<img class="logo" alt="" src="logo.png"
+         onload="this.parentElement.classList.add('has-logo')"
+         onerror="this.remove()"></div>
     <div class="school">โรงเรียนปากช่อง</div>
     <div class="system">ระบบประเมินครูผู้สอนรายวิชา</div>
     <div class="bar"><span></span></div>
