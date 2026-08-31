@@ -84,6 +84,7 @@
   var frame  = document.getElementById('app');
   var loader = document.getElementById('loader');
   var t0 = Date.now();
+  let idApply = param.get('ln');
 
   /*
    * ส่งพารามิเตอร์ที่ติดมากับหน้านี้ต่อให้แอปทั้งหมด — ลิงก์จากแชท LINE (?ln=1)
@@ -93,6 +94,22 @@
   var extra = location.search.slice(1).split('&').filter(function (p) {
     return p && !/^t=/.test(p);
   }).join('&');
+  function getNoCacheUrl(baseUrl, params = "") {
+      let sep = baseUrl.includes('?') ? '&' : '?';
+      return baseUrl + params + sep + "t=" + new Date().getTime();
+  }
+  let finalUrl = idApply ? getNoCacheUrl(baseAppScript, `?ln=${idApply}`) : getNoCacheUrl(APP_URL);
+  let settled = false;
+
+  // สำรอง: ถ้าฝังใน iframe ไม่ได้ (เช่น โดน X-Frame-Options: SAMEORIGIN
+  // ตอน Google เด้งไปหน้า login) onload จะไม่ยิงภายในเวลาที่กำหนด
+  // -> เปลี่ยนไปเปิดลิงก์ /exec ตรง ๆ ทั้งแท็บ เพื่อให้ล็อกอิน/ใช้งานต่อได้
+  let fallbackTimer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      window.location.replace(finalUrl);
+  }, 10000); // เวลารอ iframe ก่อนตัดสินใจ fallback (มิลลิวินาที) — ปรับได้
+  
   frame.src = APP_URL + (APP_URL.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now() +
               (extra ? '&' + extra : '');
 
