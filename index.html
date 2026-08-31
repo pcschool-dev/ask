@@ -102,7 +102,7 @@
   }
   let finalUrl = idApply ? getNoCacheUrl(baseAppScript, `?ln=${idApply}`) : getNoCacheUrl(APP_URL);
   let settled = false;
-
+  console.log(finalUrl)
   // สำรอง: ถ้าฝังใน iframe ไม่ได้ (เช่น โดน X-Frame-Options: SAMEORIGIN
   // ตอน Google เด้งไปหน้า login) onload จะไม่ยิงภายในเวลาที่กำหนด
   // -> เปลี่ยนไปเปิดลิงก์ /exec ตรง ๆ ทั้งแท็บ เพื่อให้ล็อกอิน/ใช้งานต่อได้
