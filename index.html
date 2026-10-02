@@ -54,15 +54,12 @@
             border-radius: 10px; color: #344054; text-decoration: none; font-size: .85rem; }
   @media (prefers-reduced-motion: reduce) { .bar span { animation: none; width: 100%; } }
 
-  /* แถบปุ่ม Google (ครู/บุคลากร) — โผล่เฉพาะตอนแอปอยู่หน้าเข้าสู่ระบบ ดูสคริปต์ท้ายหน้า
-     ปุ่มต้องอยู่หน้านี้ เพราะ Google รับปุ่มเฉพาะโดเมนที่ลงทะเบียน (กรอบ Apps Script ลงทะเบียนไม่ได้) */
-  #gbar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 5; height: 78px;
-          box-sizing: border-box; padding: 10px 16px 6px; background: #f8fafc; border-bottom: 1px solid #e5e7eb;
-          flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-  #gbtn { min-height: 40px; }
-  #gbar small { font-size: .75rem; color: #6b7280; }
-  body.g-on #gbar { display: flex; }
-  body.g-on iframe { height: calc(100% - 78px); margin-top: 78px; }
+  /* ปุ่ม Google (ครู/บุคลากร) วางทับช่อง #gSlot ในการ์ดเข้าสู่ระบบของแอปตามพิกัดที่แอปส่งมา
+     ปุ่มต้องอยู่หน้านี้ เพราะ Google รับปุ่มเฉพาะโดเมนที่ลงทะเบียน (กรอบ Apps Script ลงทะเบียนไม่ได้)
+     พื้นขาวทึบปิดข้อความ "กำลังโหลดปุ่ม" ในช่องของแอปให้มิด */
+  #gfloat { display: none; position: fixed; z-index: 5; align-items: center; justify-content: center;
+            background: #fff; border-radius: 999px; }
+  #gfloat.on { display: flex; }
 </style>
 <script src="https://accounts.google.com/gsi/client" async onload="window.gReady && window.gReady()"></script>
 </head>
@@ -88,10 +85,7 @@
   </div>
 </div>
 
-<div id="gbar" role="region" aria-label="เข้าสู่ระบบด้วย Google">
-  <div id="gbtn"></div>
-  <small>ครูและบุคลากร · บัญชี @pcschool.ac.th · ไม่ต้องจำรหัสผ่าน</small>
-</div>
+<div id="gfloat" role="region" aria-label="เข้าสู่ระบบด้วย Google"><div id="gbtn"></div></div>
 <iframe id="app" allow="clipboard-write" referrerpolicy="no-referrer"></iframe>
 
 <script>
@@ -127,30 +121,48 @@
   });
 
   /*
-   * ปุ่มเข้าสู่ระบบด้วย Google (ครู/บุคลากร) — คู่กับ JsAuth (tellWrapper) และ 24_GoogleLogin.gs ของระบบ
-   *   แอป → หน้านี้ { tes:'auth', state:'login'|'in'|'logout' }
-   *   หน้านี้ → แอป { tes:'gwrap' } (มีปุ่มจริง) / { tes:'gcred', credential } (ผลจาก Google)
-   * ส่ง credential กลับไปที่หน้าต่างที่ส่ง 'login' มาเท่านั้น (ev.source + ev.origin ของกรอบ Apps Script)
+   * ปุ่มเข้าสู่ระบบด้วย Google (ครู/บุคลากร) — คู่กับ JsAuth (tellWrapper/reportGSlot) และ 24_GoogleLogin.gs
+   *   แอป → หน้านี้ { tes:'auth', state:'login'|'in'|'logout' } / { tes:'gslot', rect } (ช่องในการ์ด, null = ซ่อน)
+   *   หน้านี้ → แอป { tes:'gwrap' } (มีปุ่มจริง แอปจึงเว้นช่อง) / { tes:'gcred', credential } (ผลจาก Google)
+   * พิกัดของแอปนับจากมุมกรอบ — บวกตำแหน่งกรอบบนหน้านี้แล้ววางปุ่มทับ (กรอบชั้นในของ Apps Script ชิดมุมพอดี)
+   * ส่ง credential กลับไปที่หน้าต่างที่ส่งข้อความมาเท่านั้น (ev.source + ev.origin ของกรอบ Apps Script)
    * auto_select: เคยกดปุ่มกับระบบไหนของโรงเรียนแล้ว เปิดที่นี่ก็เข้าเอง — ออกจากระบบแล้วปิด auto
    */
   var GOOGLE_CLIENT_ID = '557466410691-3h5k0b5mdoan0p8ojrfbpvbs8icgi6q2.apps.googleusercontent.com';
-  var gApp = null, gOrigin = '', gInit = false, gWant = false, gNoAuto = false;
+  var gApp = null, gOrigin = '', gInit = false, gWant = false, gNoAuto = false, gPrompted = false;
+  var gRect = null, gBtnW = 0;
+  var gFloat = document.getElementById('gfloat');
 
-  function gShow() {
-    if (!gWant || !window.google || !google.accounts || !google.accounts.id) return;
-    if (!gInit) {
-      gInit = true;
-      google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: gCallback, auto_select: true,
-        hd: 'pcschool.ac.th', context: 'signin', ux_mode: 'popup', use_fedcm_for_prompt: true,
-        cancel_on_tap_outside: false });
-    }
-    document.body.classList.add('g-on');
-    google.accounts.id.renderButton(document.getElementById('gbtn'), { theme: 'outline', size: 'large',
-      text: 'signin_with', shape: 'pill', locale: 'th',
-      width: Math.max(200, Math.min(320, document.documentElement.clientWidth - 32)) });
-    if (!gNoAuto) google.accounts.id.prompt();
+  function gReadyNow() { return !!(window.google && google.accounts && google.accounts.id); }
+
+  function gInitOnce() {
+    if (gInit || !gReadyNow()) return gInit;
+    gInit = true;
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: gCallback, auto_select: true,
+      hd: 'pcschool.ac.th', context: 'signin', ux_mode: 'popup', use_fedcm_for_prompt: true,
+      cancel_on_tap_outside: false });
+    return true;
   }
-  window.gReady = gShow;
+
+  function gPlace() {
+    if (!gWant || !gRect || !gInitOnce()) { gFloat.classList.remove('on'); return; }
+    var fr = frame.getBoundingClientRect();
+    gFloat.style.left = (fr.left + gRect.x) + 'px';
+    gFloat.style.top = (fr.top + gRect.y) + 'px';
+    gFloat.style.width = gRect.w + 'px';
+    gFloat.style.height = gRect.h + 'px';
+    gFloat.classList.add('on');
+    // ปุ่มของ Google กว้างได้ 200–400px — วาดใหม่เมื่อความกว้างช่องเปลี่ยนจริง (หมุนจอ) ไม่ใช่ทุกครั้งที่เลื่อน
+    var w = Math.max(200, Math.min(400, Math.floor(gRect.w)));
+    if (Math.abs(w - gBtnW) > 4) {
+      gBtnW = w;
+      google.accounts.id.renderButton(document.getElementById('gbtn'), { theme: 'outline', size: 'large',
+        text: 'signin_with', shape: 'pill', locale: 'th', width: w });
+    }
+    if (!gNoAuto && !gPrompted) { gPrompted = true; google.accounts.id.prompt(); }
+  }
+  window.gReady = gPlace;
+  window.addEventListener('resize', gPlace);
 
   function gCallback(resp) {
     if (!resp || !resp.credential || !gApp) return;
@@ -159,15 +171,16 @@
 
   window.addEventListener('message', function (ev) {
     var d = ev.data;
-    if (!d || d.tes !== 'auth' || !/\.googleusercontent\.com$/.test(String(ev.origin))) return;
+    if (!d || (d.tes !== 'auth' && d.tes !== 'gslot') || !/\.googleusercontent\.com$/.test(String(ev.origin))) return;
     gApp = ev.source; gOrigin = ev.origin;
+    if (d.tes === 'gslot') { gRect = d.rect || null; gPlace(); return; }
     if (d.state === 'login') {
       gWant = true;
       try { gApp.postMessage({ tes: 'gwrap' }, gOrigin); } catch (e) { }
-      gShow();
+      gPlace();
     } else {
-      gWant = false;
-      document.body.classList.remove('g-on');
+      gWant = false; gRect = null; gPrompted = false;
+      gFloat.classList.remove('on');
       try { google.accounts.id.cancel(); } catch (e) { }
       if (d.state === 'logout') {
         gNoAuto = true;
