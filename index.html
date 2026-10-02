@@ -168,7 +168,8 @@
     if (!resp || !resp.credential || !gApp) return;
     // ซ่อนปุ่มทันทีระหว่างแอปตรวจ (แอปขึ้นหน้ารอทับการ์ด) — กันกดซ้ำ แอปส่งพิกัดใหม่มาเองถ้าไม่สำเร็จ
     gRect = null; gFloat.classList.remove('on');
-    gApp.postMessage({ tes: 'gcred', credential: resp.credential }, gOrigin);
+    // select_by: Google บอกว่าเกิดจากการกดปุ่มหรือเข้าเองอัตโนมัติ — ระบบไม่ให้นักเรียนเข้าเอง (ห้องคอมใช้เครื่องร่วมกัน)
+    gApp.postMessage({ tes: 'gcred', credential: resp.credential, selectBy: String(resp.select_by || '') }, gOrigin);
   }
 
   window.addEventListener('message', function (ev) {
