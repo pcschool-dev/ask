@@ -14,6 +14,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ระบบประเมินครูผู้สอน | โรงเรียนปากช่อง</title>
+<!-- หน้าเตือนเปิดจากแอป Facebook/Instagram/Messenger (ไฟล์กลางของทีม DSDS) -->
+<script src="https://pcschool-dev.github.io/dsds/fbgate.js"></script>
 <style>
   :root { --brand: #0d6efd; }             /* เปลี่ยนเป็นสีประจำโรงเรียนได้ */
   html, body { margin: 0; height: 100%; background: #fff;
@@ -108,8 +110,10 @@
   var extra = location.search.slice(1).split('&').filter(function (p) {
     return p && !/^t=/.test(p);
   }).join('&');
-  frame.src = APP_URL + (APP_URL.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now() +
-              (extra ? '&' + extra : '');
+  // เปิดในแอป Facebook -> fbgate.js ขึ้นหน้าเตือนแล้ว ไม่ต้องโหลดระบบ (ในแอป Facebook ขึ้นหน้าขาว)
+  if (!(window.DSDSFbGate && DSDSFbGate.blocked))
+    frame.src = APP_URL + (APP_URL.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now() +
+                (extra ? '&' + extra : '');
   // ลิงก์เปิดตรงพกพารามิเตอร์ชุดเดียวกัน — ลิงก์ประเมิน/ลิงก์แชทยังทำงานครบแม้เปิดเต็มจอ
   document.getElementById('direct').href = APP_URL + (extra ? '?' + extra : '');
 
